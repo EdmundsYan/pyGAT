@@ -7,6 +7,11 @@ import torch.nn.functional as F
 class GraphAttentionLayer(nn.Module):
     """
     Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
+    in_features: 输入特征维度
+    out_features: 输出特征维度
+    dropout: dropout率
+    alpha: LeakyReLU的负斜率
+    concat: 是否使用拼接机制
     """
     def __init__(self, in_features, out_features, dropout, alpha, concat=True):
         super(GraphAttentionLayer, self).__init__()
@@ -25,9 +30,9 @@ class GraphAttentionLayer(nn.Module):
 
     def forward(self, h, adj):
         Wh = torch.mm(h, self.W) # h.shape: (N, in_features), Wh.shape: (N, out_features)
-        e = self._prepare_attentional_mechanism_input(Wh)
+        e = self._prepare_attentional_mechanism_input(Wh)#先算所有的注意力值
 
-        zero_vec = -9e15*torch.ones_like(e)
+        zero_vec = -9e15*torch.ones_like(e)#再把没有连接的地方的注意力值设为负无穷
         attention = torch.where(adj > 0, e, zero_vec)
         attention = F.softmax(attention, dim=1)
         attention = F.dropout(attention, self.dropout, training=self.training)
